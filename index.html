@@ -63,6 +63,12 @@
   .status{font-size:13px;color:var(--ok);margin-top:8px;min-height:18px}
   .warn{color:var(--carmin)}
   .note{font-size:12.5px;color:var(--soft);margin-top:10px}
+  .svc{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-top:8px;cursor:pointer;font-size:14px;background:#FCFCFB}
+  .svc input{width:auto;margin-top:4px}
+  .svc small{display:block;color:var(--soft);font-size:12.5px}
+  .svc.on{border-color:var(--canard);background:rgba(51,131,139,.06)}
+  .svc.off{opacity:.55;cursor:not-allowed}
+  .svc .res{color:var(--carmin)}
   footer{text-align:center;color:var(--soft);font-size:12px;margin-top:24px}
   :focus-visible{outline:2px solid var(--canard);outline-offset:2px}
 </style>
@@ -85,7 +91,7 @@
       <div class="hint">Recopiez les éléments de l'avis : la lecture par photo arrivera avec le module de calcul de la valeur locative. Rien n'est enregistré : les données restent sur cet appareil le temps du rendez-vous.</div>
       <div class="g4">
         <div><label class="f" for="annee">Année de l'avis</label><input type="number" id="annee" inputmode="numeric"></div>
-        <div><label class="f" for="commune">Commune</label><input type="text" id="commune" autocomplete="off"></div>
+        <div><label class="f" for="commune">Commune</label><input type="text" id="commune" list="communes-liste" autocomplete="off"><datalist id="communes-liste"></datalist><div class="note" id="commune-info" style="margin-top:4px"></div></div>
         <div><label class="f" for="refavis">Référence de l'avis</label><input type="text" id="refavis" autocomplete="off"></div>
         <div><label class="f" for="total-avis">Montant total à payer (€)</label><input type="number" id="total-avis" step="0.01" inputmode="decimal"></div>
       </div>
@@ -169,8 +175,10 @@
     <div class="panel">
       <h2>Demande du détail du calcul</h2>
       <div class="hint">Courrier au service des impôts du lieu du bien, envoyé de votre messagerie avec le mandat signé en pièce jointe.</div>
-      <label class="f" for="sip">Courriel du service des impôts</label>
-      <input type="email" id="sip" inputmode="email" placeholder="sip.xxx@dgfip.finances.gouv.fr" autocomplete="off">
+      <label class="f">Service des impôts fonciers compétent</label>
+      <div id="services"></div>
+      <label class="f" for="sip">Courriel du destinataire <span style="font-weight:400">— rempli par le choix ci-dessus, modifiable</span></label>
+      <input type="email" id="sip" inputmode="email" placeholder="sdif.xxx@dgfip.finances.gouv.fr" autocomplete="off">
       <label class="f" for="d-objet">Objet</label><input type="text" id="d-objet">
       <label class="f" for="d-corps">Message</label><textarea id="d-corps" style="min-height:260px"></textarea>
       <div class="actions">
@@ -231,7 +239,7 @@ function aller(e){
   ["avis", "verdict", "mission"].forEach(k => $("e-" + k).hidden = k !== e);
   document.querySelectorAll(".etapes button").forEach(b => { if(b.dataset.etape === e) b.setAttribute("aria-current", "step"); else b.removeAttribute("aria-current"); });
   if(e === "verdict") rendreVerdict();
-  if(e === "mission") rendreDemande();
+  if(e === "mission"){ rendreDemande(); rendreServices(); }
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 document.querySelectorAll(".etapes button").forEach(b => b.addEventListener("click", () => !b.disabled && aller(b.dataset.etape)));
@@ -476,6 +484,82 @@ $("partager-docs").addEventListener("click", async () => {
   catch(e){ $("st-docs").textContent = e.name === "AbortError" ? "Partage annulé." : "Partage refusé : téléchargez les documents."; }
 });
 
+/* ---------------- commune et service compétent (référentiel de MATRICE) ----------------
+   Même règle que MATRICE (lib/routage.js, corrections.json v4) :
+   1. exception propre à la commune, sinon services du département ;
+   2. un seul service avec un courriel sans réserve : proposé d'office ;
+   3. plusieurs services : le collaborateur choisit, jamais de rabattement silencieux ;
+   4. aucun courriel exploitable : coordonnées du service affichées, adresse à saisir.
+   Le référentiel est lu directement dans le dépôt MATRICE : une correction faite
+   pour MATRICE profite aussitôt à TAXVÉRIF. Les communes « apprises » de MATRICE
+   (table Neon) ne sont pas lues ici. */
+const REFERENTIEL = "https://raw.githubusercontent.com/FIDAL-NOTAIRES/matrice/main/data/corrections.json";
+const GEO = "https://geo.api.gouv.fr/communes";
+let ref = null, communeChoisie = null, propositions = [];
+async function chargerReferentiel(){
+  if(ref) return ref;
+  try{ const r = await fetch(REFERENTIEL, { cache: "no-cache" }); if(!r.ok) throw 0; ref = await r.json(); if(+ref.version !== 4) throw 0; }
+  catch(e){ ref = null; }
+  return ref;
+}
+const departementDe = c => { c = String(c || ""); return c.length !== 5 ? null : (c.startsWith("97") || c.startsWith("98") ? c.slice(0, 3) : c.slice(0, 2)); };
+function servicesPour(code){
+  if(!ref || !code) return null;
+  const ind = ref.communesExceptions?.[code] || ref.departements?.[departementDe(code)]?.services || [];
+  return ind.map(i => ref.services[i]).filter(Boolean).map(x => {
+    const r = x.courriel && ref.reserves?.[x.courriel];
+    const reserve = r && r.levee !== true ? r.motif : null;
+    return { nom: x.nom.replace(/^Service départemental des impôts fonciers\s*/, "").replace(/^\((SDIF|CDIF|PTGC)\)\s*/, "$1 "), courriel: reserve ? null : x.courriel, reserve,
+      telephone: x.telephone, adresse: x.adressePostale, etat: x.etatAdresse, fiche: x.urlFiche };
+  });
+}
+let geoTimer = null, geoRes = [];
+$("commune").addEventListener("input", () => {
+  communeChoisie = null; $("commune-info").textContent = "";
+  const q = $("commune").value.trim();
+  const exact = geoRes.find(c => (c.nom + " (" + c.code + ")") === q);
+  if(exact){ choisirCommune(exact); return; }
+  clearTimeout(geoTimer);
+  if(q.length < 2) return;
+  geoTimer = setTimeout(async () => {
+    try{
+      const r = await fetch(GEO + "?nom=" + encodeURIComponent(q) + "&fields=code,nom,departement&boost=population&limit=8");
+      geoRes = r.ok ? await r.json() : [];
+      $("communes-liste").innerHTML = geoRes.map(c => '<option value="' + (c.nom + " (" + c.code + ")").replace(/"/g, "&quot;") + '">' + (c.departement ? c.departement.nom : "") + '</option>').join("");
+      const seule = geoRes.length === 1 || geoRes.find(c => c.nom.toLowerCase() === q.toLowerCase() && geoRes.filter(d => d.nom.toLowerCase() === q.toLowerCase()).length === 1);
+      if(seule) choisirCommune(geoRes.length === 1 ? geoRes[0] : seule, true);
+    }catch(e){ $("commune-info").textContent = "Annuaire des communes indisponible : le service des impôts se saisira à la main."; }
+  }, 300);
+});
+function choisirCommune(c, garderSaisie){
+  communeChoisie = c;
+  if(!garderSaisie) $("commune").value = c.nom;
+  $("commune-info").textContent = "Code INSEE " + c.code + (c.departement ? " · " + c.departement.nom + " (" + c.departement.code + ")" : "");
+  propositions = []; $("sip").value = ""; delete $("sip").dataset.touche;   // nouvelle commune : le destinataire se recalcule
+  calculer();
+}
+async function rendreServices(){
+  const box = $("services");
+  if(!communeChoisie){ box.innerHTML = '<div class="note">Choisissez la commune dans la liste proposée à l\'étape 1 pour trouver le service compétent, ou saisissez l\'adresse ci-dessous.</div>'; return; }
+  await chargerReferentiel();
+  if(!ref){ box.innerHTML = '<div class="note warn">Référentiel des services de MATRICE indisponible : saisissez l\'adresse ci-dessous.</div>'; return; }
+  propositions = servicesPour(communeChoisie.code) || [];
+  if(!propositions.length){ box.innerHTML = '<div class="note warn">Aucun service connu pour cette commune : saisissez l\'adresse ci-dessous.</div>'; return; }
+  const valides = propositions.filter(x => x.courriel);
+  const uniques = [...new Set(valides.map(x => x.courriel))];   // ex. Nord : trois services, une seule boîte
+  box.innerHTML = propositions.map((x, i) => '<label class="svc' + (x.courriel ? "" : " off") + '"><input type="radio" name="svc" value="' + i + '"' + (x.courriel ? "" : " disabled") + '><span><b>' + x.nom + '</b>'
+    + '<small>' + (x.courriel ? x.courriel + (x.etat === "a_verifier" ? " — adresse déduite, à confirmer par la réponse" : "") : '<span class="res">' + (x.reserve ? "Adresse sous réserve : " + x.reserve : "Aucun courriel connu") + '</span>') + '</small>'
+    + '<small>' + [x.telephone, x.adresse].filter(Boolean).join(" · ") + '</small></span></label>').join("")
+    + '<div class="note">' + (uniques.length === 1 && valides.length === propositions.length ? (propositions.length > 1 ? "Les services du département partagent la même adresse : elle est retenue d'office." : "Service compétent d'après le référentiel de MATRICE.")
+       : propositions.length > 1 ? "Le département compte plusieurs services : choisissez celui qui couvre la commune." : "") + '</div>';
+  box.querySelectorAll("input[name=svc]").forEach(r => r.addEventListener("change", () => {
+    $("sip").value = propositions[+r.value].courriel; majCartesSvc(); majLienDemande(); }));
+  if(uniques.length === 1 && valides.length === propositions.length && !$("sip").dataset.touche){ box.querySelector("input[name=svc]").checked = true; $("sip").value = uniques[0]; }
+  else { const k = propositions.findIndex(x => x.courriel && x.courriel === $("sip").value.trim()); if(k >= 0) box.querySelectorAll("input[name=svc]")[k].checked = true; }
+  majCartesSvc(); majLienDemande();
+}
+function majCartesSvc(){ document.querySelectorAll(".svc").forEach(l => l.classList.toggle("on", l.querySelector("input").checked)); }
+
 /* ---------------- demande du détail du calcul (modèle MATRICE) ---------------- */
 function rendreDemande(){
   const A = lireAvis(), C = client();
@@ -494,7 +578,7 @@ function majLienDemande(){
   $("d-mail").href = "mailto:" + $("sip").value.trim() + "?subject=" + encodeURIComponent($("d-objet").value) + "&body=" + encodeURIComponent($("d-corps").value);
 }
 ["d-objet", "d-corps"].forEach(id => $(id).addEventListener("input", () => { $(id).dataset.touche = "1"; majLienDemande(); }));
-$("sip").addEventListener("input", majLienDemande);
+$("sip").addEventListener("input", () => { $("sip").dataset.touche = "1"; majLienDemande(); });
 ["c-civ", "c-prenoms", "c-nom", "c-naiss", "c-lieu", "c-qualite", "c-adresse", "c-email"].forEach(id => $(id).addEventListener("input", rendreDemande));
 $("c-civ").addEventListener("change", rendreDemande);
 $("d-copier").addEventListener("click", async () => {
