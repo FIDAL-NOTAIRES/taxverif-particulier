@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0F2238">
+<title>TAXVÉRIF-PARTICULIER · FIDAL Notaires</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@pdf-lib/fontkit@1.1.1/dist/fontkit.umd.min.js"></script>
+<style>
+  /* Charte FIDAL v2.2 : Georgia pour les titres, Segoe UI pour le corps */
+  :root{--nuit:#0F2238;--canard:#33838B;--orange:#FF982D;--carmin:#A01040;--ink:#1D2433;--soft:#5A6275;--paper:#F2F3F1;--card:#fff;--line:#DCDDD8;--ok:#2F6F5E}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{font-family:"Segoe UI",system-ui,-apple-system,sans-serif;background:var(--paper);color:var(--ink);line-height:1.5;padding:18px;padding-top:calc(18px + env(safe-area-inset-top,0px))}
+  .wrap{max-width:1100px;margin:0 auto}
+  header{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;border-bottom:3px solid var(--nuit);padding-bottom:12px;margin-bottom:18px}
+  h1{font-family:Georgia,"Times New Roman",serif;font-weight:normal;font-size:30px;color:var(--nuit);letter-spacing:-.01em}
+  h1 small{display:block;font-family:"Segoe UI",system-ui,sans-serif;font-size:13.5px;color:var(--soft);letter-spacing:0;margin-top:2px}
+  .etapes{display:flex;gap:6px;flex-wrap:wrap}
+  .etapes button{font:inherit;font-size:13.5px;border:1px solid var(--line);background:#fff;color:var(--soft);border-radius:999px;padding:6px 14px;cursor:pointer}
+  .etapes button[aria-current="step"]{background:var(--nuit);color:#fff;border-color:var(--nuit)}
+  .etapes button:disabled{opacity:.4;cursor:not-allowed}
+  [hidden]{display:none!important}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:16px}
+  h2{font-family:Georgia,"Times New Roman",serif;font-weight:normal;font-size:20px;color:var(--nuit);margin-bottom:4px}
+  .hint{color:var(--soft);font-size:13.5px;margin-bottom:12px;max-width:75ch}
+  label.f{display:block;font-size:12px;font-weight:600;color:var(--soft);margin:12px 0 5px}
+  input,select,textarea{width:100%;font:inherit;color:var(--ink);background:#FAFAF8;border:1px solid var(--line);border-radius:9px;padding:8px 11px}
+  textarea{min-height:120px;resize:vertical}
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}.g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px}
+  @media(max-width:760px){.g2,.g3,.g4{grid-template-columns:1fr 1fr}}
+  .bien{border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:14px;background:#FCFCFB}
+  .bien-tete{display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .bien-tete b{font-family:Georgia,serif;font-weight:normal;font-size:16px;color:var(--nuit)}
+  .scroll{overflow-x:auto}
+  table.cols{width:100%;border-collapse:collapse;margin-top:10px;font-size:14px;min-width:620px}
+  table.cols th{font-size:11.5px;font-weight:600;color:var(--soft);text-align:right;padding:6px 6px;border-bottom:1px solid var(--line)}
+  table.cols th:first-child{text-align:left}
+  table.cols td{padding:5px 6px;border-bottom:1px solid #EEEEEA;text-align:right;vertical-align:middle}
+  table.cols td:first-child{text-align:left;font-weight:600;font-size:13.5px}
+  table.cols td:first-child small{display:block;font-weight:400;color:var(--soft);font-size:12px;max-width:34ch}
+  table.cols input{text-align:right;padding:6px 8px;max-width:130px}
+  .ec-ok{color:var(--ok)}.ec-ko{color:var(--carmin);font-weight:600}
+  .btn{font:inherit;font-weight:600;border:0;border-radius:10px;padding:12px 18px;cursor:pointer;text-align:center;text-decoration:none;display:inline-block}
+  .btn-main{background:var(--nuit);color:#fff}.btn-main:hover{background:#1A3554}
+  .btn-main:disabled{background:#B7BBC2;cursor:not-allowed}
+  .btn-sec{background:#fff;color:var(--ink);border:1px solid var(--line)}
+  .btn-lien{background:none;border:0;color:var(--canard);text-decoration:underline;cursor:pointer;font:inherit;font-size:13.5px;padding:0}
+  .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+  .verdict{border-radius:12px;padding:18px 20px;margin-top:6px;border:1px solid var(--line)}
+  .verdict.ok{background:rgba(47,111,94,.07);border-color:rgba(47,111,94,.35)}
+  .verdict.ko{background:rgba(255,152,45,.10);border-color:rgba(255,152,45,.55)}
+  .verdict b{display:block;font-family:Georgia,serif;font-weight:normal;font-size:22px;color:var(--nuit);margin-bottom:4px}
+  .interne{font-size:13px;color:var(--soft);margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}
+  .interne strong{color:var(--ink)}
+  .totaux{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-top:14px}
+  .totaux div{background:#F6F7F5;border-radius:10px;padding:10px 12px;font-size:13px;color:var(--soft)}
+  .totaux div span{display:block;font-size:18px;color:var(--ink);font-weight:600}
+  .chk{display:flex;gap:9px;align-items:flex-start;margin-top:12px;font-size:14px}
+  .chk input{width:auto;margin-top:4px}
+  .chk small{display:block;color:var(--soft)}
+  .status{font-size:13px;color:var(--ok);margin-top:8px;min-height:18px}
+  .warn{color:var(--carmin)}
+  .note{font-size:12.5px;color:var(--soft);margin-top:10px}
+  footer{text-align:center;color:var(--soft);font-size:12px;margin-top:24px}
+  :focus-visible{outline:2px solid var(--canard);outline-offset:2px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>TAXVÉRIF-PARTICULIER<small>Vérification de l'avis de taxe foncière · usage interne de l'étude</small></h1>
+    <nav class="etapes" aria-label="Étapes">
+      <button data-etape="avis" aria-current="step">1 · L'avis</button>
+      <button data-etape="verdict">2 · Le verdict</button>
+      <button data-etape="mission" id="nav-mission" disabled>3 · La mission</button>
+    </nav>
+  </header>
+
+  <!-- ====================== 1. L'AVIS ====================== -->
+  <section id="e-avis">
+    <div class="panel">
+      <h2>L'avis de taxe foncière</h2>
+      <div class="hint">Recopiez les éléments de l'avis : la lecture par photo arrivera avec le module de calcul de la valeur locative. Rien n'est enregistré : les données restent sur cet appareil le temps du rendez-vous.</div>
+      <div class="g4">
+        <div><label class="f" for="annee">Année de l'avis</label><input type="number" id="annee" inputmode="numeric"></div>
+        <div><label class="f" for="commune">Commune</label><input type="text" id="commune" autocomplete="off"></div>
+        <div><label class="f" for="refavis">Référence de l'avis</label><input type="text" id="refavis" autocomplete="off"></div>
+        <div><label class="f" for="total-avis">Montant total à payer (€)</label><input type="number" id="total-avis" step="0.01" inputmode="decimal"></div>
+      </div>
+      <div class="g4">
+        <div><label class="f" for="frais-avis">Frais de gestion portés sur l'avis (€)</label><input type="number" id="frais-avis" step="0.01" inputmode="decimal"></div>
+      </div>
+      <div id="biens"></div>
+      <div class="actions"><button type="button" class="btn btn-sec" id="ajout-bien">Ajouter un bien figurant sur l'avis</button></div>
+    </div>
+
+    <div class="panel">
+      <h2>Ce que dit l'avis</h2>
+      <div class="hint">Récapitulatif recalculé à partir des bases et des taux saisis.</div>
+      <div class="totaux" id="totaux"></div>
+      <div class="note" id="note-totaux"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Simulation pour l'an prochain</h2>
+      <div class="hint">Effet d'une revalorisation des bases et d'un changement de taux de la commune.</div>
+      <div class="g3">
+        <div><label class="f" for="sim-reval">Revalorisation des bases (%)</label><input type="number" id="sim-reval" step="0.1" inputmode="decimal" placeholder="ex. 1,7"></div>
+        <div><label class="f" for="sim-taux">Variation du taux communal (points)</label><input type="number" id="sim-taux" step="0.01" inputmode="decimal" placeholder="ex. 0,50"></div>
+        <div><label class="f">Estimation des cotisations</label><div id="sim-res" style="font-size:18px;font-weight:600;padding-top:6px">—</div></div>
+      </div>
+    </div>
+    <div class="actions"><button class="btn btn-main" data-aller="verdict">Voir le verdict</button></div>
+  </section>
+
+  <!-- ====================== 2. LE VERDICT ====================== -->
+  <section id="e-verdict" hidden>
+    <div class="panel">
+      <h2>Le verdict</h2>
+      <div class="hint">Ce que l'on dit au client à ce stade, sans détail chiffré. Le détail est réservé à la mission.</div>
+      <label class="f" for="ecart-releve">Écart annuel relevé par le collaborateur (€) <span style="font-weight:400">— votre propre analyse de l'avis, en attendant le module de calcul de la valeur locative</span></label>
+      <input type="number" id="ecart-releve" step="0.01" inputmode="decimal" placeholder="0,00" style="max-width:220px">
+      <div class="verdict" id="verdict"></div>
+      <label class="f" for="msg-gratuit">Message court au client</label>
+      <textarea id="msg-gratuit" style="min-height:110px"></textarea>
+      <div class="actions">
+        <button class="btn btn-sec" id="copier-gratuit">Copier le message</button>
+        <button class="btn btn-main" id="vers-mission" hidden>Écart détecté : proposer une mission</button>
+      </div>
+      <div class="status" id="st-verdict"></div>
+    </div>
+  </section>
+
+  <!-- ====================== 3. LA MISSION ====================== -->
+  <section id="e-mission" hidden>
+    <div class="panel">
+      <h2>Le client</h2>
+      <div class="hint">Ces éléments remplissent la convention d'honoraires, le mandat et la demande à l'administration.</div>
+      <div class="g3">
+        <div><label class="f" for="c-civ">Civilité</label><select id="c-civ"><option>Madame</option><option>Monsieur</option></select></div>
+        <div><label class="f" for="c-prenoms">Prénoms</label><input type="text" id="c-prenoms" autocomplete="off"></div>
+        <div><label class="f" for="c-nom">Nom</label><input type="text" id="c-nom" autocomplete="off"></div>
+      </div>
+      <div class="g3">
+        <div><label class="f" for="c-naiss">Date de naissance</label><input type="date" id="c-naiss"></div>
+        <div><label class="f" for="c-lieu">Lieu de naissance</label><input type="text" id="c-lieu" autocomplete="off"></div>
+        <div><label class="f" for="c-qualite">Qualité</label><select id="c-qualite"><option value="propriétaire">Propriétaire</option><option value="usufruitier">Usufruitier</option></select></div>
+      </div>
+      <div class="g2">
+        <div><label class="f" for="c-adresse">Adresse du client</label><input type="text" id="c-adresse" autocomplete="off"></div>
+        <div><label class="f" for="c-email">Courriel du client</label><input type="email" id="c-email" inputmode="email" autocomplete="off"></div>
+      </div>
+      <label class="chk"><input type="checkbox" id="c-distance" checked><span>Signature à distance (Yousign)<small>Ajoute à la convention la clause de rétractation de 14 jours et la demande expresse de commencer la mission avant son terme.</small></span></label>
+    </div>
+
+    <div class="panel">
+      <h2>Convention d'honoraires et mandat</h2>
+      <div class="hint">Forfait de 140 € hors taxes (168 € TTC) par avis vérifié. Les deux documents partent ensemble pour signature dans Yousign.</div>
+      <div class="actions">
+        <button class="btn btn-main" id="dl-docs">Télécharger la convention et le mandat</button>
+        <button class="btn btn-sec" id="partager-docs">Partager les deux documents</button>
+      </div>
+      <div class="note">Déposez les deux PDF dans Yousign, en signature avancée, avec le client pour signataire. Une fois signés, joignez le mandat à la demande ci-dessous.</div>
+      <div class="status" id="st-docs"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Demande du détail du calcul</h2>
+      <div class="hint">Courrier au service des impôts du lieu du bien, envoyé de votre messagerie avec le mandat signé en pièce jointe.</div>
+      <label class="f" for="sip">Courriel du service des impôts</label>
+      <input type="email" id="sip" inputmode="email" placeholder="sip.xxx@dgfip.finances.gouv.fr" autocomplete="off">
+      <label class="f" for="d-objet">Objet</label><input type="text" id="d-objet">
+      <label class="f" for="d-corps">Message</label><textarea id="d-corps" style="min-height:260px"></textarea>
+      <div class="actions">
+        <a class="btn btn-main" id="d-mail" href="#" target="_top">Ouvrir le mail</a>
+        <button class="btn btn-sec" id="d-copier">Copier le texte</button>
+      </div>
+      <div class="note">Le mail s'ouvre sans pièce jointe : joignez-y le mandat signé téléchargé depuis Yousign.</div>
+      <div class="status" id="st-demande"></div>
+    </div>
+  </section>
+
+  <footer>TAXVÉRIF-PARTICULIER · FIDAL Notaires — Paris · gamme FIDAL Apps</footer>
+</div>
+
+<script>
+/* ==========================================================================
+   TAXVÉRIF-PARTICULIER — version 0.1 (18/10/2026)
+   Arbitrages JFD (16-18/10/2026) :
+   - usage interne (associés et collaborateurs), vérification à la volée en
+     rendez-vous, sans dossier ; données en mémoire le temps de la séance ;
+   - verdict gratuit sans chiffres (« avis cohérent » / « point à creuser ») ;
+   - écart sous le seuil : rien n'est signalé au client ;
+   - au-delà du seuil, proposition automatique de mission : forfait 140 € HT
+     par avis, convention + mandat signés par Yousign ;
+   - le mandat couvre la demande de fiche de calcul ET la réclamation, sans
+     pouvoir d'encaisser, un an renouvelable tacitement jusqu'à décision,
+     année de l'avis et année précédente ;
+   - la demande de fiche de calcul part par mail (modèle MATRICE).
+   EN ATTENTE : module de calcul de la valeur locative (fichier DGFiP des tarifs
+   d'habitation), lecture de l'avis par photo (avis réel de test).
+   À TRANCHER : exigibilité du forfait (EXIGIBILITE ci-dessous).
+   ========================================================================== */
+const FORFAIT_HT = 140, TVA = 0.20;
+const FORFAIT_TTC = Math.round(FORFAIT_HT * (1 + TVA) * 100) / 100;   // 168 €
+const SEUIL = FORFAIT_TTC;      // écart annuel minimal pour proposer une mission (tranché le 18/10)
+/* "signature" : forfait dû à la signature (rédaction proposée, à confirmer) ;
+   "reclamation" : forfait dû seulement à l'envoi de la réclamation. */
+const EXIGIBILITE = "signature";
+const ETUDE = { nom: "FIDAL Notaires", l1: "3 place de la Madeleine", l2: "75008 Paris", crpcen: "75007" };
+
+const COLONNES = [
+  ["commune", "Commune", "Part votée par le conseil municipal ; elle comprend depuis 2021 l'ancienne part du département."],
+  ["syndicat", "Syndicats de communes", "Part des syndicats intercommunaux qui financent des services communs."],
+  ["interco", "Intercommunalité", "Part votée par la communauté de communes, d'agglomération ou la métropole."],
+  ["tse", "Taxe spéciale d'équipement", "Au profit d'un établissement public foncier ou d'aménagement."],
+  ["gemapi", "GEMAPI", "Taxe pour la gestion des milieux aquatiques et la prévention des inondations."],
+  ["teom", "Ordures ménagères (TEOM)", "Taxe d'enlèvement des ordures ménagères, qui finance la collecte des déchets."]
+];
+
+const $ = id => document.getElementById(id);
+const num = v => { const n = parseFloat(String(v ?? "").replace(",", ".")); return isFinite(n) ? n : 0; };
+const eur = n => (Math.round(n * 100) / 100).toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace(/[\u202F\u00A0]/g, " ") + " €";
+const nomFichier = s => (s || "").replace(/[\\/:*?"<>|]+/g, "-").trim();
+$("annee").value = new Date().getFullYear();
+
+/* ---------------- étapes ---------------- */
+function aller(e){
+  ["avis", "verdict", "mission"].forEach(k => $("e-" + k).hidden = k !== e);
+  document.querySelectorAll(".etapes button").forEach(b => { if(b.dataset.etape === e) b.setAttribute("aria-current", "step"); else b.removeAttribute("aria-current"); });
+  if(e === "verdict") rendreVerdict();
+  if(e === "mission") rendreDemande();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+document.querySelectorAll(".etapes button").forEach(b => b.addEventListener("click", () => !b.disabled && aller(b.dataset.etape)));
+document.querySelectorAll("[data-aller]").forEach(b => b.addEventListener("click", () => aller(b.dataset.aller)));
+
+/* ---------------- biens et colonnes ---------------- */
+function ajouterBien(){
+  const n = document.querySelectorAll(".bien").length + 1;
+  const d = document.createElement("div"); d.className = "bien";
+  d.innerHTML = '<div class="bien-tete"><b>Bien ' + n + '</b>' + (n > 1 ? '<button type="button" class="btn-lien sup">Retirer ce bien</button>' : '') + '</div>'
+    + '<div class="g3"><div><label class="f">Adresse du bien</label><input type="text" class="b-adr" autocomplete="off"></div>'
+    + '<div><label class="f">Numéro d\'invariant</label><input type="text" class="b-inv" autocomplete="off"></div>'
+    + '<div><label class="f">Références cadastrales</label><input type="text" class="b-cad" placeholder="AB 123" autocomplete="off"></div></div>'
+    + '<div class="scroll"><table class="cols"><thead><tr><th>Colonne de l\'avis</th><th>Base (€)</th><th>Taux (%)</th><th>Cotisation sur l\'avis (€)</th><th>Recalcul</th></tr></thead><tbody>'
+    + COLONNES.map(([k, lib, expl]) => '<tr data-col="' + k + '"><td>' + lib + '<small>' + expl + '</small></td>'
+      + '<td><input type="number" class="c-base" step="1" inputmode="decimal"></td>'
+      + '<td><input type="number" class="c-taux" step="0.01" inputmode="decimal"></td>'
+      + '<td><input type="number" class="c-cot" step="0.01" inputmode="decimal"></td>'
+      + '<td class="c-rec">—</td></tr>').join("")
+    + '</tbody></table></div>';
+  const sup = d.querySelector(".sup"); if(sup) sup.addEventListener("click", () => { d.remove(); renumeroter(); calculer(); });
+  d.querySelectorAll("input").forEach(i => i.addEventListener("input", calculer));
+  $("biens").appendChild(d);
+}
+function renumeroter(){ document.querySelectorAll(".bien").forEach((d, i) => d.querySelector(".bien-tete b").textContent = "Bien " + (i + 1)); }
+$("ajout-bien").addEventListener("click", () => { ajouterBien(); calculer(); });
+
+function lireAvis(){
+  const biens = [...document.querySelectorAll(".bien")].map(d => {
+    const cols = [...d.querySelectorAll("tr[data-col]")].map(tr => {
+      const base = num(tr.querySelector(".c-base").value), taux = num(tr.querySelector(".c-taux").value), cot = tr.querySelector(".c-cot").value;
+      const rec = Math.round(base * taux) / 100;      // base × taux %
+      return { k: tr.dataset.col, base, taux, cot: cot === "" ? null : num(cot), rec, saisie: !!(base || taux || cot !== "") };
+    });
+    return { adr: d.querySelector(".b-adr").value.trim(), inv: d.querySelector(".b-inv").value.trim(), cad: d.querySelector(".b-cad").value.trim(), cols };
+  });
+  return { annee: $("annee").value.trim(), commune: $("commune").value.trim(), ref: $("refavis").value.trim(),
+    total: $("total-avis").value === "" ? null : num($("total-avis").value), frais: num($("frais-avis").value), biens };
+}
+
+/* Écart arithmétique : cotisations recalculées (base × taux) contre cotisations portées sur l'avis,
+   puis total recalculé (cotisations de l'avis + frais) contre total à payer. */
+function calculer(){
+  const A = lireAvis();
+  let cotAvis = 0, cotRec = 0, ecartCols = 0;
+  document.querySelectorAll(".bien").forEach((d, i) => {
+    d.querySelectorAll("tr[data-col]").forEach((tr, j) => {
+      const c = A.biens[i].cols[j], cell = tr.querySelector(".c-rec");
+      if(!c.saisie){ cell.textContent = "—"; cell.className = "c-rec"; return; }
+      cotRec += c.rec; if(c.cot != null) cotAvis += c.cot;
+      if(c.cot == null || !c.base || !c.taux){ cell.textContent = c.base && c.taux ? eur(c.rec) : "—"; cell.className = "c-rec"; return; }
+      const e = c.cot - c.rec;
+      // tolérance d'un euro : l'administration arrondit chaque cotisation à l'euro
+      cell.textContent = eur(c.rec) + (Math.abs(e) > 1 ? " (écart " + eur(e) + ")" : "");
+      cell.className = "c-rec " + (Math.abs(e) > 1 ? "ec-ko" : "ec-ok");
+      if(Math.abs(e) > 1) ecartCols += e;
+    });
+  });
+  const totalRec = cotAvis + A.frais;
+  const ecartTotal = A.total != null && (cotAvis || A.frais) ? A.total - totalRec : 0;
+  $("totaux").innerHTML = '<div>Cotisations portées sur l\'avis<span>' + eur(cotAvis) + '</span></div>'
+    + '<div>Cotisations recalculées<span>' + eur(cotRec) + '</span></div>'
+    + '<div>Frais de gestion<span>' + eur(A.frais) + '</span></div>'
+    + '<div>Total à payer sur l\'avis<span>' + (A.total != null ? eur(A.total) : "—") + '</span></div>';
+  const notes = [];
+  if(Math.abs(ecartCols) > 1) notes.push("Une ou plusieurs cotisations ne correspondent pas à base × taux : écart de " + eur(ecartCols) + ".");
+  if(Math.abs(ecartTotal) > 1) notes.push("Le total à payer ne correspond pas aux cotisations augmentées des frais : écart de " + eur(ecartTotal) + ".");
+  if(!notes.length && cotAvis) notes.push("Les montants de l'avis sont arithmétiquement cohérents. La vérification de la valeur locative elle-même viendra avec le module dédié.");
+  $("note-totaux").innerHTML = notes.map(n => n.startsWith("Les") ? n : '<span class="warn">' + n + '</span>').join("<br>");
+  calcul.ecartArith = Math.max(Math.abs(ecartCols), Math.abs(ecartTotal));
+  simuler(A);
+  return A;
+}
+const calcul = { ecartArith: 0 };
+
+function simuler(A){
+  const reval = num($("sim-reval").value) / 100, dt = num($("sim-taux").value);
+  let tot = 0, base = false;
+  A.biens.forEach(b => b.cols.forEach(c => { if(!c.base) return; base = true;
+    const t = c.taux + (c.k === "commune" ? dt : 0);
+    tot += c.base * (1 + reval) * t / 100; }));
+  $("sim-res").textContent = base ? eur(tot) + " de cotisations" : "—";
+}
+["sim-reval", "sim-taux"].forEach(id => $(id).addEventListener("input", () => simuler(lireAvis())));
+["annee", "commune", "refavis", "total-avis", "frais-avis"].forEach(id => $(id).addEventListener("input", calculer));
+
+/* ---------------- verdict ---------------- */
+function ecartRetenu(){ return Math.max(calcul.ecartArith, Math.abs(num($("ecart-releve").value))); }
+function rendreVerdict(){
+  const e = ecartRetenu(), mission = e >= SEUIL;
+  const v = $("verdict");
+  v.className = "verdict " + (mission ? "ko" : "ok");
+  v.innerHTML = (mission ? "<b>Point à creuser</b>Un élément de votre avis mérite une vérification auprès de l'administration."
+                         : "<b>Avis cohérent</b>Les éléments vérifiés de votre avis n'appellent pas d'observation.")
+    + '<div class="interne"><strong>Pour l\'étude, non communiqué au client :</strong> écart annuel retenu ' + eur(e)
+    + ' ; seuil de mission ' + eur(SEUIL) + '. '
+    + (mission ? "Une mission peut être proposée au forfait de " + eur(FORFAIT_HT) + " HT."
+       : e > 0 ? "Écart sous le seuil : rien n'est signalé au client." : "Aucun écart relevé.") + '</div>';
+  const m = $("msg-gratuit");
+  if(!m.dataset.touche) m.value = mission
+    ? "Nous avons examiné votre avis de taxe foncière" + ($("annee").value ? " " + $("annee").value : "") + ". Un point mérite d'être vérifié auprès de l'administration. Nous pouvons nous en charger pour vous : nous vous adressons notre proposition."
+    : "Nous avons examiné votre avis de taxe foncière" + ($("annee").value ? " " + $("annee").value : "") + ". Les éléments vérifiés n'appellent pas d'observation de notre part.";
+  $("vers-mission").hidden = !mission;
+  $("nav-mission").disabled = !mission;
+}
+$("ecart-releve").addEventListener("input", rendreVerdict);
+$("msg-gratuit").addEventListener("input", () => $("msg-gratuit").dataset.touche = "1");
+$("copier-gratuit").addEventListener("click", async () => {
+  try{ await navigator.clipboard.writeText($("msg-gratuit").value); $("st-verdict").textContent = "Message copié."; }
+  catch(e){ $("st-verdict").textContent = "Copie impossible : sélectionnez le texte à la main."; }
+});
+$("vers-mission").addEventListener("click", () => aller("mission"));
+
+/* ---------------- textes de la mission ---------------- */
+function client(){
+  const civ = $("c-civ").value, prenoms = $("c-prenoms").value.trim(), nom = $("c-nom").value.trim().toUpperCase();
+  const f = civ === "Madame";
+  const n = $("c-naiss").value ? (() => { const [a, m, j] = $("c-naiss").value.split("-").map(Number); return new Date(a, m - 1, j).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }); })() : "[date de naissance]";
+  return { civ, prenoms, nom, f, ident: (civ + " " + (prenoms || "[prénoms]") + " " + (nom || "[NOM]")),
+    ne: (f ? "née" : "né") + " le " + n + " à " + ($("c-lieu").value.trim() || "[lieu de naissance]"),
+    adresse: $("c-adresse").value.trim() || "[adresse]", qualite: $("c-qualite").value, email: $("c-email").value.trim(), distance: $("c-distance").checked };
+}
+function biensTexte(A){
+  const b = A.biens.filter(x => x.adr || x.inv || x.cad);
+  if(!b.length) return "[adresse du bien], cadastré [références], numéro d'invariant [numéro]";
+  return b.map(x => (x.adr || "[adresse du bien]") + (A.commune ? " à " + A.commune : "") + (x.cad ? ", cadastré " + x.cad : "") + (x.inv ? ", numéro d'invariant " + x.inv : "")).join(" ; ");
+}
+function dateDuJour(){ return new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }); }
+
+function texteMandat(){
+  const A = lireAvis(), C = client(), an = A.annee || "[année]", prec = A.annee ? String(+A.annee - 1) : "[année précédente]";
+  return {
+    titre: "Mandat",
+    blocs: [
+      "Je " + (C.f ? "soussignée" : "soussigné") + " " + C.ident + ", " + C.ne + ", demeurant " + C.adresse + ",",
+      "agissant en qualité de " + C.qualite + " et de redevable de la taxe foncière sur les propriétés bâties afférente " + (A.biens.length > 1 ? "aux biens suivants" : "au bien suivant") + " : " + biensTexte(A) + ", ladite taxe ayant fait l'objet de l'avis d'imposition au titre de l'année " + an + (A.ref ? " (référence de l'avis : " + A.ref + ")" : "") + ",",
+      "donne mandat à l'office notarial " + ETUDE.nom + ", dont le siège est à Paris (75008), " + ETUDE.l1 + ", identifié sous le numéro CRPCEN " + ETUDE.crpcen + ", agissant par l'un quelconque de ses notaires ou collaborateurs,",
+      "à l'effet, en mon nom et pour mon compte :",
+      "1. d'obtenir auprès des services de la direction générale des Finances publiques compétents communication des éléments ayant servi à l'établissement de cette taxe, notamment la fiche d'évaluation de la valeur locative (consistance, catégorie, surface pondérée, éléments de confort, coefficients) ainsi que les bases et taux appliqués ;",
+      "2. de présenter toute réclamation contentieuse ou demande de dégrèvement relative à cette taxe, au titre de l'année " + an + " et, dans la limite des délais légaux, de l'année " + prec + ", ainsi que toute demande de rectification des éléments d'évaluation du bien ;",
+      "3. de correspondre avec l'administration, produire tout document, recevoir toute réponse ou décision, et plus généralement faire le nécessaire à ces fins.",
+      "Le présent mandat ne confère pas le pouvoir d'encaisser les sommes qui seraient dégrevées ou restituées, lesquelles me seront versées directement par l'administration.",
+      "Le présent mandat est consenti pour une durée d'un an à compter de sa signature. Il se renouvelle par tacite reconduction, par périodes d'un an, jusqu'à la décision définitive de l'administration sur les demandes présentées, date à laquelle il prend fin de plein droit. Il reste révocable à tout moment par écrit.",
+      "La mission est rémunérée dans les conditions de la convention d'honoraires signée ce jour."
+    ],
+    fin: "Fait le " + dateDuJour() + ", signé électroniquement.",
+    signataire: C.ident
+  };
+}
+function texteConvention(){
+  const A = lireAvis(), C = client(), an = A.annee || "[année]";
+  const exig = EXIGIBILITE === "signature"
+    ? "Ce forfait est dû à la signature de la présente convention. Il est acquis quelle que soit l'issue de la démarche, l'étude étant tenue d'une obligation de moyens et non de résultat."
+    : "Ce forfait n'est dû qu'à l'envoi de la réclamation à l'administration. Si l'examen des éléments communiqués ne révèle aucune erreur, aucun honoraire n'est dû.";
+  const blocs = [
+    "Entre " + C.ident + ", demeurant " + C.adresse + ", ci-après « le client »,",
+    "et l'office notarial " + ETUDE.nom + ", " + ETUDE.l1 + ", " + ETUDE.l2 + ", CRPCEN " + ETUDE.crpcen + ", ci-après « l'étude ».",
+    "§Objet",
+    "Le client confie à l'étude la vérification de son avis de taxe foncière au titre de l'année " + an + " pour " + (A.biens.length > 1 ? "les biens suivants" : "le bien suivant") + " : " + biensTexte(A) + ". La mission comprend la demande à l'administration du détail du calcul, l'analyse des éléments obtenus et, si une erreur est confirmée, la présentation d'une réclamation et son suivi jusqu'à la décision de l'administration, dans les conditions du mandat signé ce jour.",
+    "Cette prestation n'entre pas dans le tarif réglementé des notaires et fait l'objet de la présente convention.",
+    "§Honoraires",
+    "La mission est rémunérée par un forfait de " + eur(FORFAIT_HT) + " hors taxes, soit " + eur(FORFAIT_TTC) + " toutes taxes comprises (TVA à 20 %), par avis vérifié. " + exig + " Aucun honoraire complémentaire n'est dû en fonction du montant dégrevé.",
+    "§Débours",
+    "La mission n'entraîne en principe aucun débours. Tout débours éventuel serait soumis à l'accord préalable du client.",
+    "§Sommes dégrevées",
+    "Les sommes dégrevées ou restituées sont versées directement au client par l'administration ; l'étude ne les encaisse pas.",
+    "§Durée",
+    "La convention prend fin à la décision définitive de l'administration sur les demandes présentées."
+  ];
+  if(C.distance) blocs.push("§Rétractation",
+    "Le client, qui signe la présente convention à distance, dispose d'un délai de quatorze jours à compter de sa signature pour se rétracter, sans avoir à motiver sa décision ni à supporter de pénalité, par un simple écrit adressé à l'étude.",
+    "Le client demande expressément que l'exécution de la mission commence avant la fin de ce délai. Il reconnaît qu'en cas de rétractation après ce commencement, il reste redevable d'un montant proportionnel au service fourni jusqu'à la communication de sa décision de se rétracter.");
+  return { titre: "Convention d'honoraires", blocs, fin: "Fait le " + dateDuJour() + ", signé électroniquement.", signataire: C.ident, etude: true };
+}
+
+/* ---------------- PDF ---------------- */
+let policesCache = null;
+async function polices(doc){
+  const { StandardFonts } = PDFLib;
+  try{
+    if(typeof fontkit === "undefined") throw 0;
+    if(!policesCache) policesCache = await Promise.all(["./segoeui.ttf", "./segoeuib.ttf"].map(u => fetch(u).then(x => { if(!x.ok) throw 0; return x.arrayBuffer(); })));
+    doc.registerFontkit(fontkit);
+    return { r: await doc.embedFont(policesCache[0], { subset: true }), b: await doc.embedFont(policesCache[1], { subset: true }), segoe: true };
+  }catch(e){ policesCache = null; return { r: await doc.embedFont(StandardFonts.Helvetica), b: await doc.embedFont(StandardFonts.HelveticaBold), segoe: false }; }
+}
+async function pdfDocument(T){
+  const { PDFDocument, rgb } = PDFLib;
+  const doc = await PDFDocument.create(); doc.setTitle(T.titre); doc.setAuthor(ETUDE.nom);
+  const F = await polices(doc);
+  const nuit = rgb(15/255, 34/255, 56/255), canard = rgb(51/255, 131/255, 139/255), gris = rgb(0.35, 0.37, 0.42), filet = rgb(0.85, 0.85, 0.82);
+  const W = 595.28, H = 841.89, M = 62, L = W - 2 * M;
+  let page, y;
+  const nouvellePage = () => {
+    page = doc.addPage([W, H]); y = H - 70;
+    page.drawRectangle({ x: 0, y: H - 6, width: W, height: 6, color: canard });
+    page.drawText(ETUDE.nom, { x: M, y: H - 40, size: 10, font: F.b, color: nuit });
+    page.drawText(ETUDE.l1 + ", " + ETUDE.l2 + " — CRPCEN " + ETUDE.crpcen, { x: M + F.b.widthOfTextAtSize(ETUDE.nom, 10) + 10, y: H - 40, size: 8.5, font: F.r, color: gris });
+    page.drawLine({ start: { x: M, y: 50 }, end: { x: W - M, y: 50 }, thickness: 0.6, color: filet });
+    page.drawText(T.titre + " — page " + doc.getPageCount(), { x: M, y: 36, size: 8, font: F.r, color: gris });
+  };
+  const couper = (t, s, f) => { const out = []; let l = "";
+    for(const m of String(t).split(/\s+/)){ const e = l ? l + " " + m : m; if(f.widthOfTextAtSize(e, s) > L && l){ out.push(l); l = m; } else l = e; } if(l) out.push(l); return out; };
+  const para = (t, o = {}) => { const s = o.s || 10.5, f = o.b ? F.b : F.r, lh = s * 1.45;
+    for(const l of couper(t, s, f)){ if(y < 80) nouvellePage(); page.drawText(l, { x: M, y, size: s, font: f, color: o.c || nuit }); y -= lh; }
+    y -= o.apres ?? 6; };
+  nouvellePage();
+  y -= 10; para(T.titre.toUpperCase(), { s: 15, b: true, apres: 14 });
+  for(const b of T.blocs){ if(b.startsWith("§")){ y -= 4; para(b.slice(1), { b: true, c: canard, apres: 2 }); } else para(b); }
+  y -= 10; para(T.fin, { apres: 24 });
+  if(y < 150) nouvellePage();
+  const col = T.etude ? 2 : 1, lc = (L - 20) / col;
+  const sign = (x, titre, nom) => { page.drawText(titre, { x, y, size: 9.5, font: F.b, color: nuit }); page.drawText(nom, { x, y: y - 14, size: 9.5, font: F.r, color: gris });
+    page.drawRectangle({ x, y: y - 80, width: lc, height: 56, borderColor: filet, borderWidth: 0.8 }); };
+  sign(M, T.etude ? "Le client" : "Signature du mandant", T.signataire);
+  if(T.etude) sign(M + lc + 20, "Pour l'étude", ETUDE.nom);
+  return { octets: await doc.save(), segoe: F.segoe };
+}
+async function fichiersMission(){
+  const C = client(), base = nomFichier((C.nom || "client") + " " + (lireAvis().annee || ""));
+  const conv = await pdfDocument(texteConvention()), mand = await pdfDocument(texteMandat());
+  return { segoe: conv.segoe, fichiers: [
+    new File([conv.octets], "Convention d'honoraires TAXVERIF - " + base + ".pdf", { type: "application/pdf" }),
+    new File([mand.octets], "Mandat TAXVERIF - " + base + ".pdf", { type: "application/pdf" }) ] };
+}
+function controleMission(){
+  const C = client(), manque = [];
+  if(!C.nom) manque.push("le nom du client"); if(!C.prenoms) manque.push("ses prénoms"); if(!$("c-adresse").value.trim()) manque.push("son adresse");
+  return manque;
+}
+$("dl-docs").addEventListener("click", async () => {
+  const m = controleMission(); if(m.length){ $("st-docs").innerHTML = '<span class="warn">Manque ' + m.join(", ") + ".</span>"; return; }
+  const { fichiers, segoe } = await fichiersMission();
+  fichiers.forEach((f, i) => setTimeout(() => { const a = document.createElement("a"); a.href = URL.createObjectURL(f); a.download = f.name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500); }, i * 400));
+  $("st-docs").textContent = "Convention et mandat téléchargés." + (segoe ? "" : " (Police de secours : Segoe UI absente du dépôt.)");
+});
+$("partager-docs").addEventListener("click", async () => {
+  const m = controleMission(); if(m.length){ $("st-docs").innerHTML = '<span class="warn">Manque ' + m.join(", ") + ".</span>"; return; }
+  const { fichiers } = await fichiersMission();
+  if(!navigator.share || (navigator.canShare && !navigator.canShare({ files: fichiers }))){ $("st-docs").textContent = "Partage indisponible sur cet appareil : téléchargez les documents."; return; }
+  try{ await navigator.share({ files: fichiers, title: "Convention et mandat TAXVÉRIF" }); $("st-docs").textContent = "Documents transmis au menu de partage."; }
+  catch(e){ $("st-docs").textContent = e.name === "AbortError" ? "Partage annulé." : "Partage refusé : téléchargez les documents."; }
+});
+
+/* ---------------- demande du détail du calcul (modèle MATRICE) ---------------- */
+function rendreDemande(){
+  const A = lireAvis(), C = client();
+  const b1 = A.biens.find(x => x.adr || x.inv) || {};
+  if(!$("d-objet").dataset.touche) $("d-objet").value = "Taxe foncière " + (A.annee || "[année]") + " — " + (A.commune || "[commune]") + (b1.inv ? " — invariant " + b1.inv : "") + " — demande des éléments de calcul";
+  if(!$("d-corps").dataset.touche) $("d-corps").value = [
+    "Madame, Monsieur,", "",
+    "Je vous écris en qualité de notaire, à la demande et pour le compte de " + C.ident + ", redevable de la taxe foncière sur les propriétés bâties afférente " + (A.biens.length > 1 ? "aux biens suivants" : "au bien suivant") + " : " + biensTexte(A) + ", au titre de l'année " + (A.annee || "[année]") + (A.ref ? " (référence de l'avis : " + A.ref + ")" : "") + ".", "",
+    "Je vous serais reconnaissant de bien vouloir me communiquer les éléments ayant servi au calcul de la valeur locative de " + (A.biens.length > 1 ? "ces biens" : "ce bien") + ", et notamment " + (A.biens.length > 1 ? "leur fiche" : "sa fiche") + " d'évaluation (catégorie, surface pondérée, éléments de confort, coefficients d'entretien et de situation), ainsi que les bases et taux retenus.", "",
+    "Vous trouverez ci-joint le mandat que " + C.ident + " m'a consenti à cet effet.", "",
+    "Vous remerciant par avance pour votre retour, je vous assure de mon profond respect."
+  ].join("\n");
+  majLienDemande();
+}
+function majLienDemande(){
+  $("d-mail").href = "mailto:" + $("sip").value.trim() + "?subject=" + encodeURIComponent($("d-objet").value) + "&body=" + encodeURIComponent($("d-corps").value);
+}
+["d-objet", "d-corps"].forEach(id => $(id).addEventListener("input", () => { $(id).dataset.touche = "1"; majLienDemande(); }));
+$("sip").addEventListener("input", majLienDemande);
+["c-civ", "c-prenoms", "c-nom", "c-naiss", "c-lieu", "c-qualite", "c-adresse", "c-email"].forEach(id => $(id).addEventListener("input", rendreDemande));
+$("c-civ").addEventListener("change", rendreDemande);
+$("d-copier").addEventListener("click", async () => {
+  try{ await navigator.clipboard.writeText($("d-objet").value + "\n\n" + $("d-corps").value); $("st-demande").textContent = "Texte copié."; }
+  catch(e){ $("st-demande").textContent = "Copie impossible : sélectionnez le texte à la main."; }
+});
+
+if(typeof PDFLib === "undefined") $("st-docs").innerHTML = '<span class="warn">Bibliothèque PDF non chargée : vérifiez la connexion puis rechargez la page.</span>';
+ajouterBien();
+calculer();
+</script>
+</body>
+</html>
