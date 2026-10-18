@@ -137,7 +137,7 @@
   <section id="e-mission" hidden>
     <div class="panel">
       <h2>Le client</h2>
-      <div class="hint">Ces éléments remplissent la convention d'honoraires, le mandat et la demande à l'administration.</div>
+      <div class="hint">Ces éléments remplissent la lettre de mission, le mandat et la demande à l'administration.</div>
       <div class="g3">
         <div><label class="f" for="c-civ">Civilité</label><select id="c-civ"><option>Madame</option><option>Monsieur</option></select></div>
         <div><label class="f" for="c-prenoms">Prénoms</label><input type="text" id="c-prenoms" autocomplete="off"></div>
@@ -152,14 +152,14 @@
         <div><label class="f" for="c-adresse">Adresse du client</label><input type="text" id="c-adresse" autocomplete="off"></div>
         <div><label class="f" for="c-email">Courriel du client</label><input type="email" id="c-email" inputmode="email" autocomplete="off"></div>
       </div>
-      <label class="chk"><input type="checkbox" id="c-distance" checked><span>Signature à distance (Yousign)<small>Ajoute à la convention la clause de rétractation de 14 jours et la demande expresse de commencer la mission avant son terme.</small></span></label>
+      <label class="chk"><input type="checkbox" id="c-distance" checked><span>Signature à distance (Yousign)<small>Ajoute à la lettre de mission la clause de rétractation de 14 jours et la demande expresse de commencer la mission avant son terme.</small></span></label>
     </div>
 
     <div class="panel">
-      <h2>Convention d'honoraires et mandat</h2>
+      <h2>Lettre de mission et mandat</h2>
       <div class="hint">Forfait de 140 € hors taxes (168 € TTC) par avis vérifié. Les deux documents partent ensemble pour signature dans Yousign.</div>
       <div class="actions">
-        <button class="btn btn-main" id="dl-docs">Télécharger la convention et le mandat</button>
+        <button class="btn btn-main" id="dl-docs">Télécharger la lettre de mission et le mandat</button>
         <button class="btn btn-sec" id="partager-docs">Partager les deux documents</button>
       </div>
       <div class="note">Déposez les deux PDF dans Yousign, en signature avancée, avec le client pour signataire. Une fois signés, joignez le mandat à la demande ci-dessous.</div>
@@ -194,7 +194,7 @@
    - verdict gratuit sans chiffres (« avis cohérent » / « point à creuser ») ;
    - écart sous le seuil : rien n'est signalé au client ;
    - au-delà du seuil, proposition automatique de mission : forfait 140 € HT
-     par avis, convention + mandat signés par Yousign ;
+     par avis, lettre de mission + mandat signés par Yousign ;
    - le mandat couvre la demande de fiche de calcul ET la réclamation, sans
      pouvoir d'encaisser, un an renouvelable tacitement jusqu'à décision,
      année de l'avis et année précédente ;
@@ -375,7 +375,7 @@ function texteMandat(){
       "3. de correspondre avec l'administration, produire tout document, recevoir toute réponse ou décision, et plus généralement faire le nécessaire à ces fins.",
       "Le présent mandat ne confère pas le pouvoir d'encaisser les sommes qui seraient dégrevées ou restituées, lesquelles me seront versées directement par l'administration.",
       "Le présent mandat est consenti pour une durée d'un an à compter de sa signature. Il se renouvelle par tacite reconduction, par périodes d'un an, jusqu'à la décision définitive de l'administration sur les demandes présentées, date à laquelle il prend fin de plein droit. Il reste révocable à tout moment par écrit.",
-      "La mission est rémunérée dans les conditions de la convention d'honoraires signée ce jour."
+      "La mission est rémunérée dans les conditions de la lettre de mission signée ce jour."
     ],
     fin: "Fait le " + dateDuJour() + ", signé électroniquement.",
     signataire: C.ident
@@ -384,14 +384,14 @@ function texteMandat(){
 function texteConvention(){
   const A = lireAvis(), C = client(), an = A.annee || "[année]";
   const exig = EXIGIBILITE === "signature"
-    ? "Ce forfait est dû à la signature de la présente convention. Il est acquis quelle que soit l'issue de la démarche, l'étude étant tenue d'une obligation de moyens et non de résultat."
+    ? "Ce forfait est dû à la signature de la présente lettre de mission. Il est acquis quelle que soit l'issue de la démarche, l'étude étant tenue d'une obligation de moyens et non de résultat."
     : "Ce forfait n'est dû qu'à l'envoi de la réclamation à l'administration. Si l'examen des éléments communiqués ne révèle aucune erreur, aucun honoraire n'est dû.";
   const blocs = [
     "Entre " + C.ident + ", demeurant " + C.adresse + ", ci-après « le client »,",
     "et l'office notarial " + ETUDE.nom + ", " + ETUDE.l1 + ", " + ETUDE.l2 + ", CRPCEN " + ETUDE.crpcen + ", ci-après « l'étude ».",
     "§Objet",
     "Le client confie à l'étude la vérification de son avis de taxe foncière au titre de l'année " + an + " pour " + (A.biens.length > 1 ? "les biens suivants" : "le bien suivant") + " : " + biensTexte(A) + ". La mission comprend la demande à l'administration du détail du calcul, l'analyse des éléments obtenus et, si une erreur est confirmée, la présentation d'une réclamation et son suivi jusqu'à la décision de l'administration, dans les conditions du mandat signé ce jour.",
-    "Cette prestation n'entre pas dans le tarif réglementé des notaires et fait l'objet de la présente convention.",
+    "Cette prestation n'entre pas dans le tarif réglementé des notaires et fait l'objet de la présente lettre de mission.",
     "§Honoraires",
     "La mission est rémunérée par un forfait de " + eur(FORFAIT_HT) + " hors taxes, soit " + eur(FORFAIT_TTC) + " toutes taxes comprises (TVA à 20 %), par avis vérifié. " + exig + " Aucun honoraire complémentaire n'est dû en fonction du montant dégrevé.",
     "§Débours",
@@ -399,12 +399,12 @@ function texteConvention(){
     "§Sommes dégrevées",
     "Les sommes dégrevées ou restituées sont versées directement au client par l'administration ; l'étude ne les encaisse pas.",
     "§Durée",
-    "La convention prend fin à la décision définitive de l'administration sur les demandes présentées."
+    "La lettre de mission prend fin à la décision définitive de l'administration sur les demandes présentées."
   ];
   if(C.distance) blocs.push("§Rétractation",
-    "Le client, qui signe la présente convention à distance, dispose d'un délai de quatorze jours à compter de sa signature pour se rétracter, sans avoir à motiver sa décision ni à supporter de pénalité, par un simple écrit adressé à l'étude.",
+    "Le client, qui signe la présente lettre de mission à distance, dispose d'un délai de quatorze jours à compter de sa signature pour se rétracter, sans avoir à motiver sa décision ni à supporter de pénalité, par un simple écrit adressé à l'étude.",
     "Le client demande expressément que l'exécution de la mission commence avant la fin de ce délai. Il reconnaît qu'en cas de rétractation après ce commencement, il reste redevable d'un montant proportionnel au service fourni jusqu'à la communication de sa décision de se rétracter.");
-  return { titre: "Convention d'honoraires", blocs, fin: "Fait le " + dateDuJour() + ", signé électroniquement.", signataire: C.ident, etude: true };
+  return { titre: "Lettre de mission", blocs, fin: "Fait le " + dateDuJour() + ", signé électroniquement.", signataire: C.ident, etude: true };
 }
 
 /* ---------------- PDF ---------------- */
@@ -454,7 +454,7 @@ async function fichiersMission(){
   const C = client(), base = nomFichier((C.nom || "client") + " " + (lireAvis().annee || ""));
   const conv = await pdfDocument(texteConvention()), mand = await pdfDocument(texteMandat());
   return { segoe: conv.segoe, fichiers: [
-    new File([conv.octets], "Convention d'honoraires TAXVERIF - " + base + ".pdf", { type: "application/pdf" }),
+    new File([conv.octets], "Lettre de mission TAXVERIF - " + base + ".pdf", { type: "application/pdf" }),
     new File([mand.octets], "Mandat TAXVERIF - " + base + ".pdf", { type: "application/pdf" }) ] };
 }
 function controleMission(){
@@ -466,13 +466,13 @@ $("dl-docs").addEventListener("click", async () => {
   const m = controleMission(); if(m.length){ $("st-docs").innerHTML = '<span class="warn">Manque ' + m.join(", ") + ".</span>"; return; }
   const { fichiers, segoe } = await fichiersMission();
   fichiers.forEach((f, i) => setTimeout(() => { const a = document.createElement("a"); a.href = URL.createObjectURL(f); a.download = f.name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500); }, i * 400));
-  $("st-docs").textContent = "Convention et mandat téléchargés." + (segoe ? "" : " (Police de secours : Segoe UI absente du dépôt.)");
+  $("st-docs").textContent = "Lettre de mission et mandat téléchargés." + (segoe ? "" : " (Police de secours : Segoe UI absente du dépôt.)");
 });
 $("partager-docs").addEventListener("click", async () => {
   const m = controleMission(); if(m.length){ $("st-docs").innerHTML = '<span class="warn">Manque ' + m.join(", ") + ".</span>"; return; }
   const { fichiers } = await fichiersMission();
   if(!navigator.share || (navigator.canShare && !navigator.canShare({ files: fichiers }))){ $("st-docs").textContent = "Partage indisponible sur cet appareil : téléchargez les documents."; return; }
-  try{ await navigator.share({ files: fichiers, title: "Convention et mandat TAXVÉRIF" }); $("st-docs").textContent = "Documents transmis au menu de partage."; }
+  try{ await navigator.share({ files: fichiers, title: "Lettre de mission et mandat TAXVÉRIF" }); $("st-docs").textContent = "Documents transmis au menu de partage."; }
   catch(e){ $("st-docs").textContent = e.name === "AbortError" ? "Partage annulé." : "Partage refusé : téléchargez les documents."; }
 });
 
